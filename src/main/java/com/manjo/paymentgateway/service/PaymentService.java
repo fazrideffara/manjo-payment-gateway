@@ -160,4 +160,24 @@ public class PaymentService {
                 .transactionStatusDesc(trx.getStatus())
                 .build();
     }
+    @Transactional
+    public PaymentResponse cancelTransaction(String referenceNumber) {
+        log.info("Cancel transaction request: refNo={}", referenceNumber);
+        Transaction trx = transactionRepository.findByReferenceNumber(referenceNumber)
+                .orElseThrow(() -> new TransactionNotFoundException("Transaction not found"));
+
+        if (!TransactionStatus.PENDING.equalsIgnoreCase(trx.getStatus())) {
+            throw new IllegalStateException("Only PENDING transactions can be cancelled");
+        }
+
+        trx.setStatus(TransactionStatus.CANCELLED);
+        transactionRepository.save(trx);
+        webhookService.sendNotification(trx);
+
+        return PaymentResponse.builder()
+                .responseCode(MessageConstants.CODE_SUCCESS)
+                .responseMessage("Transaction cancelled successfully")
+                .transactionStatusDesc(TransactionStatus.CANCELLED)
+                .build();
+    }
 }

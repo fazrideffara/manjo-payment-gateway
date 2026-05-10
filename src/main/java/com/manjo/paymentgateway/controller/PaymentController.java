@@ -50,6 +50,14 @@ public class PaymentController {
         PaymentResponse response = paymentService.queryTransaction(trxId, referenceNumber);
         return ResponseEntity.ok(response);
     }
+    
+    @PostMapping(ApiEndpoints.QR_BASE + ApiEndpoints.QR_CANCEL)
+    @Operation(summary = "Cancel QR Payment (Original)", description = "Cancel a PENDING QR payment")
+    public ResponseEntity<PaymentResponse> cancelQr(
+            @RequestParam("reference_number") String referenceNumber) {
+        PaymentResponse response = paymentService.cancelTransaction(referenceNumber);
+        return ResponseEntity.ok(response);
+    }
 
     // Generic Endpoints
     @PostMapping(ApiEndpoints.PAYMENT_BASE + ApiEndpoints.PAYMENT_CREATE)

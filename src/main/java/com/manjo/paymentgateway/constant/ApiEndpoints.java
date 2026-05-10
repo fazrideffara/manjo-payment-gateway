@@ -10,6 +10,7 @@ public final class ApiEndpoints {
     public static final String QR_BASE = API_V1 + "/qr";
     public static final String QR_GENERATE = "/generate";
     public static final String QR_QUERY = "/query";
+    public static final String QR_CANCEL = "/cancel";
     public static final String QR_PAYMENT = "/payment";
 
     // Payment Generic (Extended)
