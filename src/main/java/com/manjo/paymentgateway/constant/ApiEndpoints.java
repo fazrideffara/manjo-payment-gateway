@@ -17,8 +17,6 @@ public final class ApiEndpoints {
     public static final String PAYMENT_BASE = API_V1 + "/payment";
     public static final String PAYMENT_CREATE = "/create";
     public static final String PAYMENT_CALLBACK = "/callback";
-    public static final String PAYMENT_BANK = "/bank-transfer";
-    public static final String PAYMENT_CC = "/credit-card";
     
     // Admin / Dashboard Endpoints
     public static final String ADMIN_BASE = API_V1 + "/admin";

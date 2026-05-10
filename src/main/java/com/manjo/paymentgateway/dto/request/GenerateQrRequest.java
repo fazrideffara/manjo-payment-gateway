@@ -22,7 +22,6 @@ public class GenerateQrRequest {
 
     private String callbackUrl;
     private String merchantName;
-    private String customerUserNo;
     private String mpan;
     
     private String description;

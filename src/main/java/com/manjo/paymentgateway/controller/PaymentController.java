@@ -80,15 +80,5 @@ public class PaymentController {
         return ResponseEntity.ok(response);
     }
     
-    @PostMapping(ApiEndpoints.PAYMENT_BASE + ApiEndpoints.PAYMENT_BANK)
-    @Operation(summary = "Bank Transfer Placeholder")
-    public ResponseEntity<String> bankTransfer() {
-        return ResponseEntity.ok("Bank Transfer endpoint placeholder");
-    }
-    
-    @PostMapping(ApiEndpoints.PAYMENT_BASE + ApiEndpoints.PAYMENT_CC)
-    @Operation(summary = "Credit Card Placeholder")
-    public ResponseEntity<String> creditCard() {
-        return ResponseEntity.ok("Credit Card endpoint placeholder");
     }
 }
