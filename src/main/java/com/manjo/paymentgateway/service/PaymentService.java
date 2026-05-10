@@ -97,7 +97,7 @@ public class PaymentService {
         String qrPlaceholder = "00020101021226620015ID.CO.MANJO.WWW01189360085801751859910210EP278421820303UMI51530014ID.CO.QRIS.WWW0215ID102106515" + referenceNo;
 
         return GenerateQrResponse.builder()
-                .responseCode(MessageConstants.CODE_SUCCESS)
+                .responseCode(MessageConstants.CODE_GENERATE_SUCCESS)
                 .responseMessage(MessageConstants.SUCCESS)
                 .referenceNo(referenceNo)
                 .partnerReferenceNo(request.getPartnerReferenceNo())
@@ -134,7 +134,7 @@ public class PaymentService {
         webhookService.sendNotification(trx);
 
         return PaymentResponse.builder()
-                .responseCode(MessageConstants.CODE_SUCCESS)
+                .responseCode(MessageConstants.CODE_NOTIFY_SUCCESS)
                 .responseMessage(MessageConstants.SUCCESS)
                 .build();
     }
@@ -152,7 +152,7 @@ public class PaymentService {
         Transaction trx = trxOpt.orElseThrow(() -> new TransactionNotFoundException("Transaction not found"));
 
         return PaymentResponse.builder()
-                .responseCode(MessageConstants.CODE_SUCCESS)
+                .responseCode(MessageConstants.CODE_QUERY_SUCCESS)
                 .responseMessage(MessageConstants.SUCCESS)
                 .referenceNo(trx.getReferenceNumber())
                 .partnerReferenceNo(trx.getTrxId())

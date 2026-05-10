@@ -13,6 +13,10 @@ public final class MessageConstants {
     
     // Standard HTTP-like Status Codes
     public static final String CODE_SUCCESS = "200";
+    public static final String CODE_GENERATE_SUCCESS = "2004700";
+    public static final String CODE_QUERY_SUCCESS = "2005100";
+    public static final String CODE_NOTIFY_SUCCESS = "2005100";
+    
     public static final String CODE_UNAUTHORIZED = "401";
     public static final String CODE_NOT_FOUND = "404";
     public static final String CODE_BAD_REQUEST = "400";
