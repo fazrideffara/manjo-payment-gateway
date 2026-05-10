@@ -25,8 +25,5 @@ public class GenerateQrRequest {
     private String customerUserNo;
     private String mpan;
     
-    private String customerName;
-    private String customerEmail;
-    private String customerPhone;
     private String description;
 }

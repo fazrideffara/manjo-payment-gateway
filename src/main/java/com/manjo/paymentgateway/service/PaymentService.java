@@ -84,9 +84,6 @@ public class PaymentService {
                 .expiryDate(LocalDateTime.now().plusMinutes(qrExpiryMinutes))
                 .merchantName(request.getMerchantName() != null ? request.getMerchantName() : "MANJO MERCHANT")
                 .customerUserNo(request.getCustomerUserNo() != null ? request.getCustomerUserNo() : "CUST-" + System.currentTimeMillis())
-                .customerName(request.getCustomerName() != null ? request.getCustomerName() : "Guest Customer")
-                .customerEmail(request.getCustomerEmail())
-                .customerPhone(request.getCustomerPhone())
                 .description(request.getDescription() != null ? request.getDescription() : "Payment for " + referenceNo)
                 .mpan(request.getMpan() != null ? request.getMpan() : "MPAN-" + (int)(Math.random() * 1000000))
                 .build();
