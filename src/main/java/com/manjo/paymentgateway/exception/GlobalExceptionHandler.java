@@ -4,6 +4,8 @@ import com.manjo.paymentgateway.constant.MessageConstants;
 import com.manjo.paymentgateway.dto.response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -17,6 +19,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleSignatureInvalid(SignatureInvalidException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(ApiResponse.error(MessageConstants.CODE_UNAUTHORIZED, MessageConstants.INVALID_SIGNATURE, ex.getMessage()));
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBadCredentials(BadCredentialsException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(MessageConstants.CODE_UNAUTHORIZED, "Username atau password salah", ex.getMessage()));
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthentication(AuthenticationException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(MessageConstants.CODE_UNAUTHORIZED, "Gagal melakukan autentikasi", ex.getMessage()));
     }
 
     @ExceptionHandler(TransactionNotFoundException.class)

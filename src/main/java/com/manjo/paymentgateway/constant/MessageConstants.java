@@ -11,16 +11,16 @@ public final class MessageConstants {
     public static final String INTERNAL_SERVER_ERROR = "Terjadi kesalahan internal pada server";
     public static final String VALIDATION_ERROR = "Kesalahan validasi data";
     
-    // Standard HTTP-like Status Codes
-    public static final String CODE_SUCCESS = "200";
+    // Standard SNAP BI Status Codes
+    public static final String CODE_SUCCESS = "2007300"; // General Success
     public static final String CODE_GENERATE_SUCCESS = "2004700";
     public static final String CODE_QUERY_SUCCESS = "2005100";
     public static final String CODE_NOTIFY_SUCCESS = "2005100";
     
-    public static final String CODE_UNAUTHORIZED = "401";
-    public static final String CODE_NOT_FOUND = "404";
-    public static final String CODE_BAD_REQUEST = "400";
-    public static final String CODE_VALIDATION = "400"; // Alias ke 400
-    public static final String CODE_CONFLICT = "409";
-    public static final String CODE_INTERNAL_ERROR = "500";
+    public static final String CODE_UNAUTHORIZED = "4017300";
+    public static final String CODE_NOT_FOUND = "4047300";
+    public static final String CODE_BAD_REQUEST = "4007300";
+    public static final String CODE_VALIDATION = "4007301";
+    public static final String CODE_CONFLICT = "4097300";
+    public static final String CODE_INTERNAL_ERROR = "5007300";
 }

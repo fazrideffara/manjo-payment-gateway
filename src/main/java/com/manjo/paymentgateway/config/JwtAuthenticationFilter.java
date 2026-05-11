@@ -39,7 +39,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        jwt = authHeader.substring(7);
+        // Ambil token dan bersihkan jika ada double "Bearer " (kasus umum di Swagger)
+        String rawToken = authHeader.substring(7).trim();
+        jwt = rawToken.startsWith("Bearer ") ? rawToken.substring(7).trim() : rawToken;
+
         try {
             username = jwtService.extractUsername(jwt);
         } catch (Exception e) {

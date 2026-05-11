@@ -16,6 +16,7 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +37,7 @@ public class AuthService {
                 .email(email)
                 .role("ROLE_USER")
                 .build();
-        userRepository.save(user);
+        userRepository.save(Objects.requireNonNull(user));
         return login(username, password);
     }
 
@@ -46,7 +47,7 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(username, password)
         );
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new org.springframework.security.authentication.BadCredentialsException("User tidak ditemukan"));
 
         // Generate Tokens
         String accessToken = jwtService.generateToken(username);
@@ -64,7 +65,7 @@ public class AuthService {
         
         // Hapus session lama (opsional: agar hanya ada 1 session aktif)
         sessionRepository.deleteByUser_Id(user.getId());
-        sessionRepository.save(session);
+        sessionRepository.save(Objects.requireNonNull(session));
 
         Map<String, String> tokens = new HashMap<>();
         tokens.put("accessToken", accessToken);
@@ -78,10 +79,10 @@ public class AuthService {
     @Transactional
     public Map<String, String> refreshToken(String refreshToken) {
         Session session = sessionRepository.findByRefreshToken(refreshToken)
-                .orElseThrow(() -> new RuntimeException("Invalid Refresh Token"));
+                .orElseThrow(() -> new RuntimeException("Refresh Token tidak valid"));
 
         if (session.isRevoked() || session.getExpiryDate().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Refresh Token Expired or Revoked");
+            throw new RuntimeException("Refresh Token sudah kadaluwarsa atau dicabut");
         }
 
         String username = session.getUser().getUsername();
@@ -96,18 +97,19 @@ public class AuthService {
     @Transactional
     public void logout(String refreshToken) {
         Session session = sessionRepository.findByRefreshToken(refreshToken)
-                .orElseThrow(() -> new RuntimeException("Session not found"));
+                .orElseThrow(() -> new RuntimeException("Sesi tidak ditemukan"));
         session.setRevoked(true);
         sessionRepository.save(session);
     }
 
     @Transactional
-    public void updateProfile(String currentUsername, String newName, String newUsername) {
-        User user = userRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public void updateProfile(String username, String newName) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new org.springframework.security.authentication.BadCredentialsException("User tidak ditemukan"));
         
-        if (newName != null) user.setName(newName);
-        if (newUsername != null) user.setUsername(newUsername);
+        if (newName != null && !newName.isEmpty()) {
+            user.setName(newName);
+        }
         
         userRepository.save(user);
     }

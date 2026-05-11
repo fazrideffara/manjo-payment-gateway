@@ -1,6 +1,7 @@
 package com.manjo.paymentgateway.controller;
 
 import com.manjo.paymentgateway.constant.ApiEndpoints;
+import com.manjo.paymentgateway.constant.SwaggerConstants;
 import com.manjo.paymentgateway.constant.TransactionStatus;
 import com.manjo.paymentgateway.dto.response.DashboardStatsDto;
 import com.manjo.paymentgateway.entity.Transaction;
@@ -18,18 +19,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.time.Duration;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(ApiEndpoints.ADMIN_BASE)
 @CrossOrigin
 @RequiredArgsConstructor
-@Tag(name = "Admin", description = "Endpoints untuk monitoring transaksi dan manajemen dashboard")
+@Tag(name = SwaggerConstants.ADMIN_TAG, description = SwaggerConstants.ADMIN_DESC)
 @SecurityRequirement(name = "JWT")
 @Slf4j
 public class AdminController {
@@ -37,7 +34,7 @@ public class AdminController {
     private final TransactionRepository transactionRepository;
 
     @GetMapping(ApiEndpoints.TRANSACTIONS)
-    @Operation(summary = "Get All Transactions", description = "Mengambil data transaksi secara terpagi (paginated) untuk dashboard admin")
+    @Operation(summary = SwaggerConstants.GET_ALL_TRANSACTIONS_SUMMARY, description = SwaggerConstants.GET_ALL_TRANSACTIONS_DESC)
     public ResponseEntity<Page<Transaction>> getAllTransactions(
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
@@ -56,8 +53,8 @@ public class AdminController {
         return ResponseEntity.ok(transactions);
     }
 
-    @GetMapping("/stats")
-    @Operation(summary = "Get Dashboard Stats", description = "Menghitung statistik real-time untuk dashboard")
+    @GetMapping(ApiEndpoints.STATS)
+    @Operation(summary = SwaggerConstants.GET_STATS_SUMMARY, description = SwaggerConstants.GET_STATS_DESC)
     public ResponseEntity<DashboardStatsDto> getStats() {
         List<Transaction> all = transactionRepository.findAll();
         
@@ -79,37 +76,13 @@ public class AdminController {
 
         double successRate = totalCount == 0 ? 0 : (double) successCount / totalCount * 100;
 
-        Map<String, Long> channelCounts = all.stream()
-                .collect(Collectors.groupingBy(Transaction::getPaymentMethod, Collectors.counting()));
-        
-        Map<String, String> performance = new HashMap<>();
-        channelCounts.forEach((method, count) -> {
-            double percent = (double) count / totalCount * 100;
-            performance.put(method, String.format("%.0f%%", percent));
-        });
-
         return ResponseEntity.ok(DashboardStatsDto.builder()
                 .totalRevenue(String.format("Rp %,.0f", revenue))
                 .activeTransactions(pendingCount)
                 .successRate(String.format("%.1f%%", successRate))
                 .settlementVolume(String.format("Rp %,.0f", totalSuccessVolume))
                 .totalTransactions(totalCount)
-                .channelPerformance(performance)
                 .build());
     }
 
-    @PostMapping("/transactions/{referenceNumber}/cancel")
-    @Operation(summary = "Cancel Transaction", description = "Membatalkan transaksi yang masih PENDING")
-    public ResponseEntity<?> cancelTransaction(@org.springframework.web.bind.annotation.PathVariable String referenceNumber) {
-        Transaction trx = transactionRepository.findByReferenceNumber(referenceNumber)
-                .orElseThrow(() -> new RuntimeException("Transaction not found"));
-        
-        if (!TransactionStatus.PENDING.equalsIgnoreCase(trx.getStatus())) {
-            return ResponseEntity.badRequest().body("Hanya transaksi PENDING yang bisa dibatalkan");
-        }
-        
-        trx.setStatus(TransactionStatus.CANCELLED);
-        transactionRepository.save(trx);
-        return ResponseEntity.ok("Transaksi berhasil dibatalkan");
-    }
 }

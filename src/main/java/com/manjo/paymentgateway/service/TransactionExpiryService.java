@@ -19,11 +19,8 @@ public class TransactionExpiryService {
 
     private final TransactionRepository transactionRepository;
 
-    /**
-     * Berjalan setiap 1 menit untuk memeriksa transaksi yang kadaluarsa.
-     * Mencari transaksi PENDING yang expiryDate-nya sudah lewat.
-     */
-    @Scheduled(fixedRate = 60000) // 60.000 ms = 1 menit
+    // Cek transaksi expired setiap 1 menit
+    @Scheduled(fixedRate = 60000)
     @Transactional
     public void checkExpiredTransactions() {
         LocalDateTime now = LocalDateTime.now();

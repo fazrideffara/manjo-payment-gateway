@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Map;
 
 @Data
 @Builder
@@ -17,7 +16,4 @@ public class DashboardStatsDto {
     private String successRate;
     private String settlementVolume;
     private long totalTransactions;
-    
-    // Untuk Channel Performance (QRIS, Bank, CC)
-    private Map<String, String> channelPerformance;
 }

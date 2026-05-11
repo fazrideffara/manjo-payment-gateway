@@ -12,6 +12,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -37,11 +38,18 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(ApiEndpoints.QR_BASE + "/**").permitAll()
-                .requestMatchers(ApiEndpoints.PAYMENT_BASE + "/**").permitAll()
-                .requestMatchers(ApiEndpoints.API_V1 + "/auth/**").permitAll()
+                .requestMatchers(ApiEndpoints.AUTH_BASE + "/login", ApiEndpoints.AUTH_BASE + "/register", ApiEndpoints.AUTH_BASE + "/refresh").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/api-docs/**").permitAll()
-                .requestMatchers(ApiEndpoints.ADMIN_BASE + "/**").permitAll() // TEMPORARY DEBUG
+                .requestMatchers(ApiEndpoints.ADMIN_BASE + "/**").authenticated()
+                .requestMatchers(ApiEndpoints.AUTH_BASE + "/**").authenticated()
                 .anyRequest().authenticated()
+            )
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setContentType("application/json");
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("{\"responseCode\":\"4017300\",\"responseMessage\":\"Unauthorized: Token missing or invalid\"}");
+                })
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authenticationProvider(authenticationProvider)

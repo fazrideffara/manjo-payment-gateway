@@ -17,7 +17,8 @@ public class WebhookService {
     private final RestTemplate restTemplate;
 
     public void sendNotification(Transaction transaction) {
-        if (transaction.getCallbackUrl() == null || transaction.getCallbackUrl().isEmpty()) {
+        String url = transaction.getCallbackUrl();
+        if (url == null || url.isEmpty()) {
             log.info("No callback URL for transaction: {}, skipping notification", transaction.getReferenceNumber());
             return;
         }
@@ -30,14 +31,13 @@ public class WebhookService {
         payload.put("paymentMethod", transaction.getPaymentMethod());
         payload.put("paidDate", transaction.getPaidDate());
 
-        log.info("Sending webhook notification to {}: status={}", transaction.getCallbackUrl(), transaction.getStatus());
+        log.info("Sending webhook notification to {}: status={}", url, transaction.getStatus());
         
         try {
-            // Mengirim request HTTP nyata ke URL callback merchant
-            restTemplate.postForEntity(transaction.getCallbackUrl(), payload, String.class);
-            log.info("Webhook successfully sent to {}", transaction.getCallbackUrl());
+            restTemplate.postForEntity(url, payload, String.class);
+            log.info("Webhook successfully sent to {}", url);
         } catch (Exception e) {
-            log.error("Failed to send webhook to {}: {}", transaction.getCallbackUrl(), e.getMessage());
+            log.error("Failed to send webhook to {}: {}", url, e.getMessage());
         }
     }
 }

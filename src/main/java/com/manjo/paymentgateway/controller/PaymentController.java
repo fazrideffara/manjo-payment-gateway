@@ -8,6 +8,7 @@ import com.manjo.paymentgateway.dto.response.GenerateQrResponse;
 import com.manjo.paymentgateway.dto.response.PaymentResponse;
 import com.manjo.paymentgateway.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,26 +25,30 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
-    // Endpoint asli dari Soal Tes (QR)
     @PostMapping(ApiEndpoints.QR_BASE + ApiEndpoints.QR_GENERATE)
-    @Operation(summary = "Generate QR MPM (Original)", description = SwaggerConstants.CREATE_PAYMENT_DESC)
+    @Operation(summary = SwaggerConstants.GENERATE_QR_SUMMARY, description = SwaggerConstants.CREATE_PAYMENT_DESC)
+    @SecurityRequirement(name = "X-Signature")
     public ResponseEntity<GenerateQrResponse> generateQr(
             @RequestHeader("X-Signature") String signature,
             @Valid @RequestBody GenerateQrRequest request) {
         request.setPaymentMethod("QR");
-        return createTransaction(signature, request);
+        GenerateQrResponse response = paymentService.createTransaction(request, signature);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping(ApiEndpoints.QR_BASE + ApiEndpoints.QR_PAYMENT)
-    @Operation(summary = "Payment Callback (Original)", description = SwaggerConstants.CALLBACK_PAYMENT_DESC)
+    @Operation(summary = SwaggerConstants.CALLBACK_QR_SUMMARY, description = SwaggerConstants.CALLBACK_PAYMENT_DESC)
+    @SecurityRequirement(name = "X-Signature")
     public ResponseEntity<PaymentResponse> paymentCallback(
             @RequestHeader("X-Signature") String signature,
             @Valid @RequestBody PaymentCallbackRequest request) {
-        return processCallback(signature, request);
+        log.info("Payment callback received: refNo={}, status={}", request.getOriginalReferenceNo(), request.getTransactionStatusDesc());
+        PaymentResponse response = paymentService.processCallback(request, signature);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping(ApiEndpoints.QR_BASE + ApiEndpoints.QR_QUERY)
-    @Operation(summary = "Query Payment (Original)", description = "Query payment status by trx_id or reference_number")
+    @Operation(summary = SwaggerConstants.QUERY_QR_SUMMARY, description = SwaggerConstants.QUERY_QR_DESC)
     public ResponseEntity<PaymentResponse> queryQr(
             @RequestParam(value = "trx_id", required = false) String trxId,
             @RequestParam(value = "reference_number", required = false) String referenceNumber) {
@@ -52,33 +57,10 @@ public class PaymentController {
     }
     
     @PostMapping(ApiEndpoints.QR_BASE + ApiEndpoints.QR_CANCEL)
-    @Operation(summary = "Cancel QR Payment (Original)", description = "Cancel a PENDING QR payment")
+    @Operation(summary = SwaggerConstants.CANCEL_QR_SUMMARY, description = SwaggerConstants.CANCEL_QR_DESC)
     public ResponseEntity<PaymentResponse> cancelQr(
             @RequestParam("reference_number") String referenceNumber) {
         PaymentResponse response = paymentService.cancelTransaction(referenceNumber);
         return ResponseEntity.ok(response);
-    }
-
-    // Generic Endpoints
-    @PostMapping(ApiEndpoints.PAYMENT_BASE + ApiEndpoints.PAYMENT_CREATE)
-    @Operation(summary = SwaggerConstants.CREATE_PAYMENT_SUMMARY, description = SwaggerConstants.CREATE_PAYMENT_DESC)
-    public ResponseEntity<GenerateQrResponse> createTransaction(
-            @RequestHeader("X-Signature") String signature,
-            @Valid @RequestBody GenerateQrRequest request) {
-        log.info("Create {} request: merchantId={}", request.getPaymentMethod(), request.getMerchantId());
-        GenerateQrResponse response = paymentService.createTransaction(request, signature);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping(ApiEndpoints.PAYMENT_BASE + ApiEndpoints.PAYMENT_CALLBACK)
-    @Operation(summary = SwaggerConstants.CALLBACK_PAYMENT_SUMMARY, description = SwaggerConstants.CALLBACK_PAYMENT_DESC)
-    public ResponseEntity<PaymentResponse> processCallback(
-            @RequestHeader("X-Signature") String signature,
-            @Valid @RequestBody PaymentCallbackRequest request) {
-        log.info("Payment callback received: refNo={}, status={}", request.getOriginalReferenceNo(), request.getTransactionStatusDesc());
-        PaymentResponse response = paymentService.processCallback(request, signature);
-        return ResponseEntity.ok(response);
-    }
-    
     }
 }

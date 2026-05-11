@@ -40,7 +40,7 @@ public class AuthConfig {
                 if (passwordEncoder().matches(password, user.getPassword())) {
                     return new UsernamePasswordAuthenticationToken(user, password, user.getAuthorities());
                 } else {
-                    throw new RuntimeException("Invalid credentials");
+                    throw new org.springframework.security.authentication.BadCredentialsException("Username atau password salah");
                 }
             }
 

@@ -8,7 +8,10 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class SignatureService {
 
     @Value("${app.signature.secret-key:manjo-secret-key-123}")
@@ -27,9 +30,10 @@ public class SignatureService {
             String computedSignature = computeHmacSha256(payload);
             
             if (!computedSignature.equals(receivedSignature)) {
-                System.out.println("DEBUG HMAC - Payload: [" + payload + "]");
-                System.out.println("DEBUG HMAC - Computed: " + computedSignature);
-                System.out.println("DEBUG HMAC - Received: " + receivedSignature);
+                log.warn("HMAC Validation FAILED!");
+                log.warn("Payload: [{}]", payload);
+                log.warn("Computed: {}", computedSignature);
+                log.warn("Received: {}", receivedSignature);
             }
             
             return MessageDigest.isEqual(
