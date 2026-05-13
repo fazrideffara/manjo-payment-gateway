@@ -25,7 +25,7 @@ public class WebhookService {
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("referenceNo", transaction.getReferenceNumber());
-        payload.put("partnerReferenceNo", transaction.getTrxId());
+        payload.put("partnerReferenceNo", transaction.getPartnerReferenceNumber());
         payload.put("status", transaction.getStatus());
         payload.put("amount", transaction.getAmount());
         payload.put("paymentMethod", transaction.getPaymentMethod());

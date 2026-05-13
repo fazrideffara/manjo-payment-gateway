@@ -54,7 +54,7 @@ class PaymentServiceTest {
         
         when(signatureService.validateSignature(anyString(), anyString(), anyString(), anyString()))
                 .thenReturn(true);
-        when(transactionRepository.existsByTrxId(anyString())).thenReturn(false);
+        when(transactionRepository.existsByPartnerReferenceNumber(anyString())).thenReturn(false);
 
         GenerateQrResponse response = paymentService.createTransaction(request, "valid-sig");
 

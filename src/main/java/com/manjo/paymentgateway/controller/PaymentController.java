@@ -50,9 +50,9 @@ public class PaymentController {
     @GetMapping(ApiEndpoints.QR_BASE + ApiEndpoints.QR_QUERY)
     @Operation(summary = SwaggerConstants.QUERY_QR_SUMMARY, description = SwaggerConstants.QUERY_QR_DESC)
     public ResponseEntity<PaymentResponse> queryQr(
-            @RequestParam(value = "trx_id", required = false) String trxId,
+            @RequestParam(value = "partner_reference_no", required = false) String partnerReferenceNo,
             @RequestParam(value = "reference_number", required = false) String referenceNumber) {
-        PaymentResponse response = paymentService.queryTransaction(trxId, referenceNumber);
+        PaymentResponse response = paymentService.queryTransaction(partnerReferenceNo, referenceNumber);
         return ResponseEntity.ok(response);
     }
     

@@ -87,8 +87,10 @@ public class PaymentService {
                 .mpan(request.getMpan() != null ? request.getMpan() : "MPAN-" + (int) (Math.random() * 1000000))
                 .build();
 
-        transactionRepository.save(trx);
-        webhookService.sendNotification(trx);
+        if (trx != null) {
+            transactionRepository.save(trx);
+            webhookService.sendNotification(trx);
+        }
 
         String qrPlaceholder = "00020101021226620015ID.CO.MANJO.WWW01189360085801751859910210EP278421820303UMI51530014ID.CO.QRIS.WWW0215ID102106515"
                 + referenceNo;
@@ -128,18 +130,25 @@ public class PaymentService {
             paidTime = LocalDateTime.now();
         }
 
-        // VALIDASI: Waktu pembayaran tidak boleh melebihi expiry_date
-        if (paidTime.isAfter(trx.getExpiryDate())) {
-            log.warn("Payment rejected: Paid time {} is after expiry date {} for ref: {}", 
-                    paidTime, trx.getExpiryDate(), trx.getReferenceNumber());
+        // VALIDASI: Waktu pembayaran tidak boleh melebihi expiry_date atau sebelum waktu transaksi
+        if (paidTime.isAfter(trx.getExpiryDate()) || paidTime.isBefore(trx.getTransactionDate())) {
+            log.warn("Payment rejected: Paid time {} is invalid (Expiry: {}, Created: {}) for ref: {}", 
+                    paidTime, trx.getExpiryDate(), trx.getTransactionDate(), trx.getReferenceNumber());
             
-            trx.setStatus(TransactionStatus.EXPIRED);
+            if (paidTime.isAfter(trx.getExpiryDate())) {
+                trx.setStatus(TransactionStatus.EXPIRED);
+            }
+            
             transactionRepository.save(trx);
             webhookService.sendNotification(trx);
             
+            String errorMsg = paidTime.isBefore(trx.getTransactionDate()) 
+                ? "Transaksi Gagal: Waktu pembayaran tidak valid (backdated)" 
+                : "Transaksi Gagal: Waktu pembayaran telah kedaluwarsa";
+                
             return PaymentResponse.builder()
                     .responseCode(MessageConstants.CODE_BAD_REQUEST)
-                    .responseMessage("Transaksi Gagal: Waktu pembayaran telah kedaluwarsa")
+                    .responseMessage(errorMsg)
                     .build();
         }
 
@@ -165,13 +174,12 @@ public class PaymentService {
     }
 
     @Transactional(readOnly = true)
-    public PaymentResponse queryTransaction(String trxId, String referenceNumber) {
+    public PaymentResponse queryTransaction(String partnerReferenceNo, String referenceNumber) {
         Optional<Transaction> trxOpt = Optional.empty();
         if (referenceNumber != null && !referenceNumber.isEmpty()) {
             trxOpt = transactionRepository.findByReferenceNumber(referenceNumber);
-        } else if (trxId != null && !trxId.isEmpty()) {
-            // trxId dipetakan ke partnerReferenceNumber sesuai diskusi
-            trxOpt = transactionRepository.findByPartnerReferenceNumber(trxId);
+        } else if (partnerReferenceNo != null && !partnerReferenceNo.isEmpty()) {
+            trxOpt = transactionRepository.findByPartnerReferenceNumber(partnerReferenceNo);
         }
 
         Transaction trx = trxOpt.orElseThrow(() -> new TransactionNotFoundException("Transaksi tidak ditemukan"));
