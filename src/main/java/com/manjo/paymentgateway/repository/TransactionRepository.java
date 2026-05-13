@@ -13,7 +13,8 @@ import java.util.Optional;
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
     Optional<Transaction> findByReferenceNumber(String referenceNumber);
-    Optional<Transaction> findByTrxId(String trxId);
+    
+    Optional<Transaction> findByPartnerReferenceNumber(String partnerReferenceNumber);
 
     List<Transaction> findByMerchantIdOrderByTransactionDateDesc(String merchantId);
 
@@ -21,7 +22,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             String merchantId, String status, Pageable pageable
     );
 
-    boolean existsByTrxId(String trxId);
+    boolean existsByPartnerReferenceNumber(String partnerReferenceNumber);
 
     List<Transaction> findAllByStatusAndExpiryDateBefore(String status, java.time.LocalDateTime expiryDate);
 

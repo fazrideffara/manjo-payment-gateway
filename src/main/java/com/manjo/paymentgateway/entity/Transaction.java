@@ -25,20 +25,33 @@ public class Transaction {
     @Column(name = "merchant_id", nullable = false, length = 50)
     private String merchantId;
 
+    @Column(name = "merchant_name")
+    private String merchantName;
+
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
-    @Column(name = "trx_id", nullable = false, unique = true, length = 100)
-    private String trxId;
+    @Column(precision = 19, scale = 2)
+    private BigDecimal fee;
 
-    @Column(name = "partner_reference_number", nullable = false, length = 100)
-    private String partnerReferenceNumber;
+    @Column(name = "net_amount", precision = 19, scale = 2)
+    private BigDecimal netAmount;
+
+    @Column(name = "currency", length = 3)
+    @Builder.Default
+    private String currency = "IDR";
+
+    @Column(name = "partner_reference_number", nullable = false, unique = true, length = 100)
+    private String partnerReferenceNumber; // Ini yang digunakan untuk validasi unik dari Merchant
 
     @Column(name = "reference_number", nullable = false, unique = true, length = 100)
-    private String referenceNumber;
+    private String referenceNumber; // Nomor internal kita
 
     @Column(name = "payment_method", nullable = false, length = 20)
-    private String paymentMethod; // QR, BANK_TRANSFER, CREDIT_CARD
+    private String paymentMethod; 
+
+    @Column(name = "payment_channel")
+    private String paymentChannel;
 
     @Column(nullable = false, length = 20)
     @Builder.Default
@@ -46,6 +59,12 @@ public class Transaction {
 
     @Column(name = "callback_url")
     private String callbackUrl;
+
+    @Column(name = "mpan")
+    private String mpan;
+
+    @Column(name = "description")
+    private String description;
 
     @Column(name = "transaction_date", nullable = false)
     private LocalDateTime transactionDate;
@@ -55,46 +74,6 @@ public class Transaction {
 
     @Column(name = "expiry_date")
     private LocalDateTime expiryDate;
-
-    @Column(name = "mpan")
-    private String mpan;
-
-    @Column(name = "customer_user_no")
-    private String customerUserNo;
-
-    @Column(name = "merchant_name")
-    private String merchantName;
-
-    @Column(name = "payment_channel")
-    private String paymentChannel; // MANDIRI, BCA, OVO, etc.
-
-    @Column(name = "payment_code")
-    private String paymentCode; // VA Number or Payment Ref
-
-    @Column(name = "currency", length = 3)
-    @Builder.Default
-    private String currency = "IDR";
-
-    @Column(precision = 19, scale = 2)
-    private BigDecimal fee;
-
-    @Column(name = "net_amount", precision = 19, scale = 2)
-    private BigDecimal netAmount;
-
-    @Column(name = "customer_name")
-    private String customerName;
-
-    @Column(name = "customer_email")
-    private String customerEmail;
-
-    @Column(name = "customer_phone")
-    private String customerPhone;
-
-    @Column(name = "terminal_id")
-    private String terminalId;
-
-    @Column(name = "description")
-    private String description;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)

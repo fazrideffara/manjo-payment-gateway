@@ -34,7 +34,6 @@ public class PaymentService {
 
     @Transactional
     public GenerateQrResponse createTransaction(GenerateQrRequest request, String signature) {
-        // 1. Validasi Amount (Standard Industri: Cek format dan nilai dulu)
         BigDecimal amount;
         try {
             amount = new BigDecimal(request.getAmount().getValue());
@@ -46,10 +45,6 @@ public class PaymentService {
             throw new IllegalArgumentException("Nominal harus lebih besar dari 0");
         }
 
-        // 2. Validasi Signature
-        log.info("Validating signature for merchantId: {}, amount: {}, partnerRef: {}",
-                request.getMerchantId(), request.getAmount().getValue(), request.getPartnerReferenceNo());
-
         boolean isValid = signatureService.validateSignature(
                 request.getMerchantId(),
                 request.getAmount().getValue(),
@@ -57,18 +52,16 @@ public class PaymentService {
                 signature);
 
         if (!isValid) {
-            log.error("Signature Validation FAILED!");
-            log.error("Received Signature: {}", signature);
             throw new SignatureInvalidException("Tanda tangan (signature) tidak valid");
         }
 
-        if (transactionRepository.existsByTrxId(request.getPartnerReferenceNo())) {
+        // Validasi Unik Partner Reference Number
+        if (transactionRepository.existsByPartnerReferenceNumber(request.getPartnerReferenceNo())) {
             throw new IllegalStateException("Transaksi dengan nomor referensi tersebut sudah ada");
         }
 
         String referenceNo = "M" + String.format("%010d", Math.abs(System.nanoTime() % 10_000_000_000L));
 
-        // Pro Payment Logic: Calculate Fee (MDR 0.7% for QRIS as example)
         BigDecimal feeRate = new BigDecimal("0.007");
         BigDecimal fee = amount.multiply(feeRate).setScale(2, java.math.RoundingMode.HALF_UP);
         BigDecimal netAmount = amount.subtract(fee);
@@ -79,14 +72,12 @@ public class PaymentService {
                 .fee(fee)
                 .netAmount(netAmount)
                 .currency(request.getAmount().getCurrency() != null ? request.getAmount().getCurrency() : "IDR")
-                .trxId(request.getPartnerReferenceNo())
                 .partnerReferenceNumber(request.getPartnerReferenceNo())
                 .referenceNumber(referenceNo)
                 .paymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : "QR")
                 .paymentChannel(
                         request.getPaymentMethod() != null && request.getPaymentMethod().equals("QR") ? "QRIS_MPM"
                                 : "UNKNOWN")
-                .paymentCode(referenceNo) // Untuk QR, payment code bisa disamakan dengan ref
                 .callbackUrl(request.getCallbackUrl())
                 .status(TransactionStatus.PENDING)
                 .transactionDate(LocalDateTime.now())
@@ -125,17 +116,41 @@ public class PaymentService {
         Transaction trx = transactionRepository.findByReferenceNumber(request.getOriginalReferenceNo())
                 .orElseThrow(() -> new TransactionNotFoundException("Transaksi tidak ditemukan"));
 
+        // Validasi: Status saat ini harus PENDING
+        if (!TransactionStatus.PENDING.equalsIgnoreCase(trx.getStatus())) {
+            throw new IllegalStateException("Transaksi sudah diproses sebelumnya dengan status: " + trx.getStatus());
+        }
+
+        LocalDateTime paidTime;
+        try {
+            paidTime = OffsetDateTime.parse(request.getPaidTime()).toLocalDateTime();
+        } catch (Exception e) {
+            paidTime = LocalDateTime.now();
+        }
+
+        // VALIDASI: Waktu pembayaran tidak boleh melebihi expiry_date
+        if (paidTime.isAfter(trx.getExpiryDate())) {
+            log.warn("Payment rejected: Paid time {} is after expiry date {} for ref: {}", 
+                    paidTime, trx.getExpiryDate(), trx.getReferenceNumber());
+            
+            trx.setStatus(TransactionStatus.EXPIRED);
+            transactionRepository.save(trx);
+            webhookService.sendNotification(trx);
+            
+            return PaymentResponse.builder()
+                    .responseCode(MessageConstants.CODE_BAD_REQUEST)
+                    .responseMessage("Transaksi Gagal: Waktu pembayaran telah kedaluwarsa")
+                    .build();
+        }
+
         String normalizedStatus = request.getTransactionStatusDesc().toUpperCase();
         if ("CANCELED".equals(normalizedStatus)) {
             normalizedStatus = TransactionStatus.CANCELLED;
         }
+        
         trx.setStatus(normalizedStatus);
         if (TransactionStatus.SUCCESS.equalsIgnoreCase(trx.getStatus())) {
-            try {
-                trx.setPaidDate(OffsetDateTime.parse(request.getPaidTime()).toLocalDateTime());
-            } catch (Exception e) {
-                trx.setPaidDate(LocalDateTime.now());
-            }
+            trx.setPaidDate(paidTime);
         } else {
             trx.setPaidDate(null);
         }
@@ -151,13 +166,12 @@ public class PaymentService {
 
     @Transactional(readOnly = true)
     public PaymentResponse queryTransaction(String trxId, String referenceNumber) {
-        log.info("Query transaction: trxId={}, refNo={}", trxId, referenceNumber);
-
         Optional<Transaction> trxOpt = Optional.empty();
-        if (trxId != null && !trxId.isEmpty()) {
-            trxOpt = transactionRepository.findByTrxId(trxId);
-        } else if (referenceNumber != null && !referenceNumber.isEmpty()) {
+        if (referenceNumber != null && !referenceNumber.isEmpty()) {
             trxOpt = transactionRepository.findByReferenceNumber(referenceNumber);
+        } else if (trxId != null && !trxId.isEmpty()) {
+            // trxId dipetakan ke partnerReferenceNumber sesuai diskusi
+            trxOpt = transactionRepository.findByPartnerReferenceNumber(trxId);
         }
 
         Transaction trx = trxOpt.orElseThrow(() -> new TransactionNotFoundException("Transaksi tidak ditemukan"));
@@ -166,7 +180,7 @@ public class PaymentService {
                 .responseCode(MessageConstants.CODE_QUERY_SUCCESS)
                 .responseMessage(MessageConstants.SUCCESS)
                 .referenceNo(trx.getReferenceNumber())
-                .partnerReferenceNo(trx.getTrxId())
+                .partnerReferenceNo(trx.getPartnerReferenceNumber())
                 .amount(new com.manjo.paymentgateway.dto.AmountDto(trx.getAmount().toString(), trx.getCurrency()))
                 .transactionStatusDesc(trx.getStatus())
                 .build();
@@ -174,7 +188,6 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponse cancelTransaction(String referenceNumber) {
-        log.info("Cancel transaction request: refNo={}", referenceNumber);
         Transaction trx = transactionRepository.findByReferenceNumber(referenceNumber)
                 .orElseThrow(() -> new TransactionNotFoundException("Transaksi tidak ditemukan"));
 
