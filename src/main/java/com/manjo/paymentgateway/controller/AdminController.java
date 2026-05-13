@@ -44,7 +44,11 @@ public class AdminController {
         
         Page<Transaction> transactions;
         if (status != null && !status.equalsIgnoreCase("ALL")) {
-            transactions = transactionRepository.findAllByStatus(status, pageable);
+            if (status.equalsIgnoreCase("CANCELLED") || status.equalsIgnoreCase("CANCELED")) {
+                transactions = transactionRepository.findAllByStatusIn(List.of("CANCELLED", "CANCELED"), pageable);
+            } else {
+                transactions = transactionRepository.findAllByStatus(status.toUpperCase(), pageable);
+            }
         } else {
             transactions = transactionRepository.findAll(pageable);
         }

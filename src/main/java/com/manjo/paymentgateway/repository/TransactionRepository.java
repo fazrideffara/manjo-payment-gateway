@@ -26,4 +26,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findAllByStatusAndExpiryDateBefore(String status, java.time.LocalDateTime expiryDate);
 
     Page<Transaction> findAllByStatus(String status, Pageable pageable);
+
+    Page<Transaction> findAllByStatusIn(List<String> statuses, Pageable pageable);
 }

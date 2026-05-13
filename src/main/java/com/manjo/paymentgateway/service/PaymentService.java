@@ -125,7 +125,11 @@ public class PaymentService {
         Transaction trx = transactionRepository.findByReferenceNumber(request.getOriginalReferenceNo())
                 .orElseThrow(() -> new TransactionNotFoundException("Transaksi tidak ditemukan"));
 
-        trx.setStatus(request.getTransactionStatusDesc().toUpperCase());
+        String normalizedStatus = request.getTransactionStatusDesc().toUpperCase();
+        if ("CANCELED".equals(normalizedStatus)) {
+            normalizedStatus = TransactionStatus.CANCELLED;
+        }
+        trx.setStatus(normalizedStatus);
         if (TransactionStatus.SUCCESS.equalsIgnoreCase(trx.getStatus())) {
             try {
                 trx.setPaidDate(OffsetDateTime.parse(request.getPaidTime()).toLocalDateTime());
